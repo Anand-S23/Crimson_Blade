@@ -28,9 +28,9 @@ struct Platform {
     bool fullscreen = false; 
 
     // Time 
-    int32_t timeElpased; 
-    float currentTime;
-    float prevTime;
+    uint32_t currentTime; 
+    uint32_t elapsedTime; 
+    uint32_t prevTime; 
     float targetFPS = 1.0f / 60;
 
     // Input

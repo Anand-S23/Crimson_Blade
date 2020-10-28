@@ -1,5 +1,6 @@
 #include <SDL.h> 
-#include <SDL_image.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 #include <stdio.h> 
 
 #include "crimson_platform.h"
@@ -28,12 +29,6 @@ internal void ToggleFullscreen(SDL_Event *event, bool setFullscreen)
     }
 }
 
-internal void UpdateWindow(SDL_Renderer *renderer)
-{
-    SDL_RenderPresent(renderer);
-    SDL_Delay(1.0f / 60); // TODO: Change this to account for more or less time
-};
-
 internal void RenderClear(SDL_Renderer *renderer)
 {
     SDL_SetRenderDrawColor(renderer, 52, 76, 76, 255);
@@ -57,7 +52,6 @@ internal void HandleEvent(SDL_Event *event)
                 {
                     SDL_Window *window = SDL_GetWindowFromID(event->window.windowID);
                     SDL_Renderer *renderer = SDL_GetRenderer(window);
-                    UpdateWindow(renderer);
                 };
             }
         }
@@ -175,7 +169,6 @@ internal void HandleEvent(SDL_Event *event)
 int main(int argc, char** argv)
 {
     SDL_Init(SDL_INIT_VIDEO);
-    IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
     SDL_Window *window = SDL_CreateWindow("Crimson Blade", 
                                           SDL_WINDOWPOS_UNDEFINED, 
@@ -188,15 +181,16 @@ int main(int argc, char** argv)
 
         if (renderer)
         {
-            GlobalPlatform.prevTime = SDL_GetTicks();
-            float lagTime = 0;
+            GlobalPlatform.prevTime = SDL_GetTicks(); 
+            float lagTime = 0; 
 
             while (GlobalPlatform.running)
             {
                 GlobalPlatform.currentTime = SDL_GetTicks();
-                GlobalPlatform.timeElpased = (float) (GlobalPlatform.currentTime - GlobalPlatform.prevTime) / 1000.0f;
+                GlobalPlatform.elapsedTime = 
+                    (float) (GlobalPlatform.currentTime - GlobalPlatform.prevTime) / 1000.0f;
                 GlobalPlatform.prevTime = GlobalPlatform.currentTime;
-                lagTime += GlobalPlatform.timeElpased;
+                lagTime += GlobalPlatform.elapsedTime;
 
                 SDL_Event event; 
                 while (SDL_PollEvent(&event))
@@ -204,17 +198,17 @@ int main(int argc, char** argv)
                     HandleEvent(&event);
                 }
 
-                // TODO: Fix refresh time
+                SDL_Delay(1);
                 while (lagTime >= GlobalPlatform.targetFPS)
                 {
-                    GameUpdateVideo(renderer, GlobalPlatform.keyPressed); 
-                    lagTime -= GlobalPlatform.targetFPS; 
+                    printf("Called\n");
+                    GameUpdateVideo(renderer, &GlobalPlatform); 
+                    lagTime -= GlobalPlatform.targetFPS;
                 }
 
                 RenderClear(renderer);
-                GameUpdateVideo(renderer, GlobalPlatform.keyPressed); 
-                UpdateWindow(renderer);
-
+                GameUpdateVideo(renderer, &GlobalPlatform); 
+                SDL_RenderPresent(renderer); 
             }
         }
         else 
@@ -227,7 +221,6 @@ int main(int argc, char** argv)
         // TODO: Logging 
     }
 
-    IMG_Quit();
     SDL_Quit();
     return 0; 
 }
