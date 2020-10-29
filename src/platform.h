@@ -17,13 +17,6 @@ typedef int64_t  b64;
 typedef float    f32;
 typedef double   f64;
 
-typedef struct platform
-{
-    b32 running;
-    b32 initalized;
-} platform;
-
-
 typedef struct win32_offscreen_buffer
 {
     BITMAPINFO info;

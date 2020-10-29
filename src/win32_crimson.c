@@ -168,8 +168,6 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
         if (window)
         {
-            int x_offset = 0;
-            int y_offset = 0; 
             while (Running)
             {
                 MSG Message; 
