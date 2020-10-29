@@ -1,11 +1,49 @@
 #include <Windows.h> 
+#include <Xinput.h>
 #include <stdint.h>
 
 #include "platform.h"
 #include "app.c"
 
+#define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
+typedef X_INPUT_GET_STATE(x_input_get_state); 
+X_INPUT_GET_STATE(XInputGetStateStub)
+{
+    return ERROR_DEVICE_NOT_CONNECTED; 
+}
+global x_input_get_state *XInputGetState_ = XInputGetStateStub;
+#define XInputGetState XInputGetState_ 
+
+#define X_INPUT_SET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION *pVibration)
+typedef X_INPUT_SET_STATE(x_input_set_state); 
+X_INPUT_SET_STATE(XInputSetStateStub)
+{
+    return ERROR_DEVICE_NOT_CONNECTED; 
+}
+global x_input_set_state *XInputSetState_ = XInputSetStateStub;
+#define XInputSetState XInputSetState_ 
+
 global b32 Running = 1; 
 global win32_offscreen_buffer Global_Backbuffer; 
+
+internal void Win32LoadXInput()
+{
+    HMODULE xinput_library = LoadLibrary("xinput1_4.dll");
+    if (!xinput_library) 
+    { 
+        HMODULE xinput_library = LoadLibrary("xinput1_3.dll"); 
+    }
+
+    if (xinput_library)
+    {
+        XInputGetState = (x_input_get_state *)GetProcAddress(xinput_library, "XInputGetState"); 
+        XInputSetState = (x_input_set_state *)GetProcAddress(xinput_library, "XInputSetState");
+    }
+    else 
+    {
+        // TODO: Logging 
+    }
+}
 
 window_dimension GetWindowDimension(HWND window)
 {
@@ -151,6 +189,7 @@ LRESULT CALLBACK Win32WindowProc(HWND window, UINT message,
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance, 
                    LPSTR cmd_line, int cmd_show)
 {
+    Win32LoadXInput();
     Win32ResizeDIBSection(&Global_Backbuffer, 1280, 720);
     WNDCLASSA window_class = {0};
 
@@ -180,6 +219,31 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
                     TranslateMessage(&Message);
                     DispatchMessageA(&Message); 
+                }
+
+                for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; ++controller_index)
+                {
+                    XINPUT_STATE controller_state; 
+                    if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS)
+                    {
+                        XINPUT_GAMEPAD *pad = &controller_state.Gamepad; 
+
+                        b32 up = (pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
+                        b32 down = (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+                        b32 left = (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+                        b32 right = (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+                        b32 start = (pad->wButtons & XINPUT_GAMEPAD_START);
+                        b32 back = (pad->wButtons & XINPUT_GAMEPAD_BACK);
+                        b32 left_shoulder = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
+                        b32 Right_shoulder = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
+                        b32 a_button = (pad->wButtons & XINPUT_GAMEPAD_A);
+                        b32 b_button = (pad->wButtons & XINPUT_GAMEPAD_B);
+                        b32 x_button = (pad->wButtons & XINPUT_GAMEPAD_X);
+                        b32 y_button = (pad->wButtons & XINPUT_GAMEPAD_Y);
+
+                        int16_t stick_x = pad->sThumbLX;
+                        int16_t stick_y = pad->sThumbLY;
+                    }
                 }
 
                 offscreen_buffer buffer = {0};
