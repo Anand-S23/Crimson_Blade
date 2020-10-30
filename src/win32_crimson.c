@@ -1,5 +1,6 @@
 #include <Windows.h> 
 #include <Xinput.h>
+#include <dsound.h>
 #include <stdint.h>
 
 #include "platform.h"
@@ -23,8 +24,85 @@ X_INPUT_SET_STATE(XInputSetStateStub)
 global x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_ 
 
+#define DIRECT_SOUND_CREATE(name) DWORD WINAPI name(LPCGUID pcGuidDevice, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter)
+typedef DIRECT_SOUND_CREATE(direct_sound_create);
+
 global b32 Running = 1; 
 global win32_offscreen_buffer Global_Backbuffer; 
+global LPDIRECTSOUNDBUFFER Global_SoundBuffer;
+
+internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t buffer_size) 
+{
+    HMODULE dsound_library = LoadLibraryA("dsound.dll");
+    if (dsound_library)
+    {
+        direct_sound_create *DirectSoundCreate = (direct_sound_create *)GetProcAddress(dsound_library, "DirectSoundCreate");
+
+        LPDIRECTSOUND direct_sound; 
+        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &direct_sound, 0)))
+        {
+/*
+            if (SUCCEEDED(direct_sound->SetCooperativeLevel(window, DSSCL_PRIORITY))) 
+            {
+            } 
+            else 
+            {
+                // TODO: logging
+            }
+
+            WAVEFORMATEX wave_format = {};
+            wave_format.wFormatTag = WAVE_FORMAT_PCM;
+            wave_format.nChannels = 2;
+            wave_format.nSamplesPerSec = samples_per_second;
+            wave_format.wBitsPerSample = 16;
+            wave_format.nBlockAlign = wave_format.nChannels * wave_format.wBitsPerSample / 8;
+            wave_format.nAvgBytesPerSec = wave_format.nSamplesPerSec * wave_format.nBlockAlign;
+
+            {
+                DSBUFFERDESC buffer_desc = {};
+                buffer_desc.dwSize = sizeof(buffer_desc);
+                buffer_desc.dwFlags = DSBCAPS_PRIMARYBUFFER;
+                LPDIRECTSOUNDBUFFER primary_buffer;
+                if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buffer_desc, &primary_buffer, 0))) 
+                {
+                    if (SUCCEEDED(primary_buffer->SetFormat(&wave_format))) 
+                    {
+                    }
+                    else 
+                    {
+                        // TDOO: logging
+                    }
+                }
+            }
+
+            {
+                DSBUFFERDESC buffer_desc = {};
+                buffer_desc.dwSize = sizeof(buffer_desc);
+                buffer_desc.dwFlags = 0;
+                buffer_desc.dwBufferBytes = buffer_size;
+                buffer_desc.lpwfxFormat = &wave_format;
+
+                if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buffer_desc, &Global_SoundBuffer, 0))) 
+                {
+                } 
+                else 
+                {
+                    // TODO: logging
+                }
+            }
+        } 
+       */
+        }
+        else 
+        {
+            // TODO: Logging 
+        }
+    }
+    else 
+    {
+        // TODO: Logging 
+    }
+}
 
 internal void Win32LoadXInput()
 {
