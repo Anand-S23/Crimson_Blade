@@ -29,8 +29,8 @@ typedef DIRECT_SOUND_CREATE(direct_sound_create);
 
 global b32 Running = 1; 
 global win32_offscreen_buffer Global_Backbuffer; 
-global LPDIRECTSOUNDBUFFER Global_SoundBuffer;
 
+/*
 internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t buffer_size) 
 {
     HMODULE dsound_library = LoadLibraryA("dsound.dll");
@@ -41,16 +41,7 @@ internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t b
         LPDIRECTSOUND direct_sound; 
         if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &direct_sound, 0)))
         {
-/*
-            if (SUCCEEDED(direct_sound->SetCooperativeLevel(window, DSSCL_PRIORITY))) 
-            {
-            } 
-            else 
-            {
-                // TODO: logging
-            }
-
-            WAVEFORMATEX wave_format = {};
+            WAVEFORMATEX wave_format = {0};
             wave_format.wFormatTag = WAVE_FORMAT_PCM;
             wave_format.nChannels = 2;
             wave_format.nSamplesPerSec = samples_per_second;
@@ -58,13 +49,16 @@ internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t b
             wave_format.nBlockAlign = wave_format.nChannels * wave_format.wBitsPerSample / 8;
             wave_format.nAvgBytesPerSec = wave_format.nSamplesPerSec * wave_format.nBlockAlign;
 
+            if (SUCCEEDED(direct_sound->SetCooperativeLevel(window, DSSCL_PRIORITY))) 
             {
-                DSBUFFERDESC buffer_desc = {};
+                DSBUFFERDESC buffer_desc = {0};
                 buffer_desc.dwSize = sizeof(buffer_desc);
                 buffer_desc.dwFlags = DSBCAPS_PRIMARYBUFFER;
+
                 LPDIRECTSOUNDBUFFER primary_buffer;
-                if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buffer_desc, &primary_buffer, 0))) 
+                if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buffer_description, &primary_buffer, 0))) 
                 {
+
                     if (SUCCEEDED(primary_buffer->SetFormat(&wave_format))) 
                     {
                     }
@@ -72,26 +66,19 @@ internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t b
                     {
                         // TDOO: logging
                     }
-                }
-            }
-
-            {
-                DSBUFFERDESC buffer_desc = {};
-                buffer_desc.dwSize = sizeof(buffer_desc);
-                buffer_desc.dwFlags = 0;
-                buffer_desc.dwBufferBytes = buffer_size;
-                buffer_desc.lpwfxFormat = &wave_format;
-
-                if (SUCCEEDED(direct_sound->CreateSoundBuffer(&buffer_desc, &Global_SoundBuffer, 0))) 
-                {
                 } 
                 else 
                 {
                     // TODO: logging
                 }
+
+                buffer_desc.dwBufferBytes = buffer_size;
+
+            } 
+            else 
+            {
+                // TODO: logging
             }
-        } 
-       */
         }
         else 
         {
@@ -103,6 +90,7 @@ internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t b
         // TODO: Logging 
     }
 }
+       */
 
 internal void Win32LoadXInput()
 {
@@ -267,6 +255,10 @@ LRESULT CALLBACK Win32WindowProc(HWND window, UINT message,
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance, 
                    LPSTR cmd_line, int cmd_show)
 {
+    LARGE_INTEGER perf_count_frequency_result; 
+    QueryPerformanceFrequency(&perf_count_frequency_result);
+    i64 perf_count_frequency = perf_count_frequency_result.QuadPart;
+    
     Win32LoadXInput();
     Win32ResizeDIBSection(&Global_Backbuffer, 1280, 720);
     WNDCLASSA window_class = {0};
@@ -275,7 +267,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
     window_class.lpfnWndProc = Win32WindowProc;
     window_class.hInstance = instance;
     window_class.lpszClassName = "CrimsonBladeWindowClass";
-    
+
     if (RegisterClassA(&window_class))
     {
         HWND window = CreateWindowExA(0, window_class.lpszClassName, "Crimson Blade", 
@@ -285,6 +277,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
         if (window)
         {
+            LARGE_INTEGER last_counter; 
+            QueryPerformanceCounter(&last_counter);
+            u64 last_cycle_count = __rdtsc();
+
             while (Running)
             {
                 MSG Message; 
@@ -341,6 +337,24 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                                            dimension.width, dimension.height,
                                            &Global_Backbuffer);
                 ReleaseDC(window, device_context);
+
+                u64 end_cycle_count = __rdtsc();
+
+                LARGE_INTEGER end_counter;
+                QueryPerformanceCounter(&end_counter);
+
+                u64 cycle_elpased = end_cycle_count - last_cycle_count;
+                i64 counter_elapsed = end_counter.QuadPart - last_counter.QuadPart; 
+                i32 ms_per_frame = (1000 * counter_elapsed) / perf_count_frequency;
+                i32 fps = perf_count_frequency / counter_elapsed;
+                i32 mcpf = (i32)(cycle_elpased / (1000 * 1000));
+
+                char str_buffer[256];
+                wsprintf(str_buffer, "%dms/f - %dFPS - %dmc/f\n", ms_per_frame, fps, mcpf);
+                OutputDebugStringA(str_buffer);
+
+                last_counter = end_counter;
+                last_cycle_count = end_cycle_count;
             }
         }
         else
