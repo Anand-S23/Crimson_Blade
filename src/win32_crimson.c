@@ -3,8 +3,9 @@
 #include <dsound.h>
 #include <stdint.h>
 
-#include "platform.h"
-#include "app.c"
+#include "win32_crimson.h"
+#include "crimson_platform.h"
+#include "crimson.c"
 
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state); 
@@ -320,16 +321,16 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                     }
                 }
 
-                offscreen_buffer buffer = {0};
+                Platform platform = {0};
                 {
-                    buffer.memory = Global_Backbuffer.memory;
-                    buffer.width = Global_Backbuffer.width; 
-                    buffer.height = Global_Backbuffer.height; 
-                    buffer.pitch = Global_Backbuffer.pitch; 
-                    buffer.bytes_per_pixel = Global_Backbuffer.bytes_per_pixel;
+                    platform.memory = Global_Backbuffer.memory;
+                    platform.width = Global_Backbuffer.width; 
+                    platform.height = Global_Backbuffer.height; 
+                    platform.pitch = Global_Backbuffer.pitch; 
+                    platform.bytes_per_pixel = Global_Backbuffer.bytes_per_pixel;
                 }
 
-                UpdateApp(&buffer);
+                UpdateApp(&platform);
 
                 HDC device_context = GetDC(window);
                 window_dimension dimension = GetWindowDimension(window);

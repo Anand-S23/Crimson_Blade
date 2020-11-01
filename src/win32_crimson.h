@@ -27,15 +27,6 @@ typedef struct win32_offscreen_buffer
     int bytes_per_pixel;
 } win32_offscreen_buffer;
 
-typedef struct offscreen_buffer
-{
-    void *memory;
-    int width; 
-    int height; 
-    int pitch; 
-    int bytes_per_pixel;
-} offscreen_buffer;
-
 typedef struct window_dimension
 {
     int width; 

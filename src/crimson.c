@@ -1,4 +1,4 @@
-#include "renderer.c"
+#include "crimson_renderer.c"
 
 typedef struct entity
 {
@@ -13,9 +13,9 @@ typedef struct entity
 
 global entity Player; 
 
-internal void UpdateApp(offscreen_buffer *buffer)
+internal void UpdateApp(Platform *platform)
 {
-    ClearBuffer(buffer);
+    ClearBuffer(platform);
 
     if (!Player.intialized)
     {
@@ -38,8 +38,8 @@ internal void UpdateApp(offscreen_buffer *buffer)
         Player.grounded = 1;
     }
 
-    DrawFilledRect(buffer, Player.x, Player.y, Player.width, Player.height, C_Color(0, 255, 255));
-    DrawFilledRect(buffer, 0, 600, 1280, 120, C_Color(100, 100, 100)); 
+    DrawFilledRect(platform, Player.x, Player.y, Player.width, Player.height, C_Color(0, 255, 255));
+    DrawFilledRect(platform, 0, 600, 1280, 120, C_Color(100, 100, 100)); 
 
 
 }

@@ -1,11 +1,11 @@
-#include "renderer.h"
+#include "crimson_renderer.h"
 
-internal void ClearBuffer(offscreen_buffer *buffer)
+internal void ClearBuffer(Platform *platform)
 {
-    int width = buffer->width;
-    int height = buffer->height;
+    int width = platform->width;
+    int height = platform->height;
     
-    u8 *row = (u8 *)buffer->memory;
+    u8 *row = (u8 *)platform->memory;
     for (int y = 0; y < height; ++y)
     {
         u32 *pixel = (u32 *)row;
@@ -18,20 +18,20 @@ internal void ClearBuffer(offscreen_buffer *buffer)
             *pixel++ = ((red << 16) | (green << 8) | blue);
         }
 
-        row += buffer->pitch;
+        row += platform->pitch;
     }
 }
 
-internal void DrawFilledRect(offscreen_buffer *buffer, 
+internal void DrawFilledRect(Platform *platform, 
                              int x, int y, int w, int h, 
                              crimson_color color)
 {
     i32 min_x = (x < 0) ? 0 : (i32)x;
     i32 min_y = (y < 0) ? 0 : (i32)y;
-    i32 max_x = (buffer->width < min_x + w) ? buffer->width : min_x + (i32)w;
-    i32 max_y = (buffer->height < min_y + h) ? buffer->height : min_y + (i32)h;
+    i32 max_x = (platform->width < min_x + w) ? platform->width : min_x + (i32)w;
+    i32 max_y = (platform->height < min_y + h) ? platform->height : min_y + (i32)h;
     
-    u8 *row = (u8 *)buffer->memory + x*buffer->bytes_per_pixel + y*buffer->pitch; 
+    u8 *row = (u8 *)platform->memory + x*platform->bytes_per_pixel + y*platform->pitch; 
     for(i32 j = min_y; j < max_y; ++j)
     {
         u32 *pixel = (u32 *)row;
@@ -40,6 +40,6 @@ internal void DrawFilledRect(offscreen_buffer *buffer,
             *pixel++ = ((color.r << 16) | (color.g << 8) | color.b);
         }
 
-        row += buffer->pitch; 
+        row += platform->pitch; 
     }
 }
