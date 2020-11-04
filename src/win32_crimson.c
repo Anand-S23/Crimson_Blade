@@ -112,7 +112,16 @@ internal void Win32LoadXInput()
     }
 }
 
-window_dimension GetWindowDimension(HWND window)
+internal void Win32ProcessXInputDigitalButton(DWORD xinput_button_state, 
+                                              game_button_state *old_state, 
+                                              game_button_state *new_state, 
+                                              DWORD button_bit)
+{
+    new_state->half_transititions = (old_state->ended_down != new_state->ended_down) ? 1 : 0;
+    new_state->ended_down = (xinput_button_state & button_bit);
+}
+
+internal window_dimension GetWindowDimension(HWND window)
 {
     window_dimension result;
 
@@ -278,6 +287,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
         if (window)
         {
+            game_input input[2];
+            game_input *new_input = &input[0];
+            game_input *old_input = &input[1];
+
             LARGE_INTEGER last_counter; 
             QueryPerformanceCounter(&last_counter);
             u64 last_cycle_count = __rdtsc();
@@ -296,8 +309,17 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                     DispatchMessageA(&Message); 
                 }
 
-                for (DWORD controller_index = 0; controller_index < XUSER_MAX_COUNT; ++controller_index)
+                int max_controller_count = XUSER_MAX_COUNT;
+                if (max_controller_count > ArrayCount(new_input->controllers))
                 {
+                    max_controller_count = ArrayCount(new_input->controllers);
+                }
+
+                for (DWORD controller_index = 0; controller_index < max_controller_count; ++controller_index)
+                {
+                    game_controller_input *old_controller = &old_input->controllers[controller_index];
+                    game_controller_input *new_controller = &new_input->controllers[controller_index];
+
                     XINPUT_STATE controller_state; 
                     if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS)
                     {
@@ -307,30 +329,50 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                         b32 down = (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
                         b32 left = (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
                         b32 right = (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
-                        b32 start = (pad->wButtons & XINPUT_GAMEPAD_START);
-                        b32 back = (pad->wButtons & XINPUT_GAMEPAD_BACK);
                         b32 left_shoulder = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
                         b32 Right_shoulder = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
+                        int16_t stick_x = pad->sThumbLX;
+                        int16_t stick_y = pad->sThumbLY;
+
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->up, &new_controller->up, 
+                                                        XINPUT_GAMEPAD_Y);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->down, &new_controller->down, 
+                                                        XINPUT_GAMEPAD_A);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->right, &new_controller->right, 
+                                                        XINPUT_GAMEPAD_B);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->left, &new_controller->left, 
+                                                        XINPUT_GAMEPAD_X);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->left_shoulder, &new_controller->left_shoulder, 
+                                                        XINPUT_GAMEPAD_LEFT_SHOULDER);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->right_shoulder, &new_controller->right_shoulder, 
+                                                        XINPUT_GAMEPAD_RIGHT_SHOULDER);
+
+                        b32 start = (pad->wButtons & XINPUT_GAMEPAD_START);
+                        b32 back = (pad->wButtons & XINPUT_GAMEPAD_BACK);
                         b32 a_button = (pad->wButtons & XINPUT_GAMEPAD_A);
                         b32 b_button = (pad->wButtons & XINPUT_GAMEPAD_B);
                         b32 x_button = (pad->wButtons & XINPUT_GAMEPAD_X);
                         b32 y_button = (pad->wButtons & XINPUT_GAMEPAD_Y);
 
-                        int16_t stick_x = pad->sThumbLX;
-                        int16_t stick_y = pad->sThumbLY;
                     }
                 }
 
-                Platform platform = {0};
+                offscreen_buffer buffer = {0};
                 {
-                    platform.memory = Global_Backbuffer.memory;
-                    platform.width = Global_Backbuffer.width; 
-                    platform.height = Global_Backbuffer.height; 
-                    platform.pitch = Global_Backbuffer.pitch; 
-                    platform.bytes_per_pixel = Global_Backbuffer.bytes_per_pixel;
+                    buffer.memory = Global_Backbuffer.memory;
+                    buffer.width = Global_Backbuffer.width; 
+                    buffer.height = Global_Backbuffer.height; 
+                    buffer.pitch = Global_Backbuffer.pitch; 
+                    buffer.bytes_per_pixel = Global_Backbuffer.bytes_per_pixel;
                 }
 
-                UpdateApp(&platform);
+                UpdateApp(&buffer, new_input);
 
                 HDC device_context = GetDC(window);
                 window_dimension dimension = GetWindowDimension(window);
@@ -352,10 +394,14 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
                 char str_buffer[256];
                 wsprintf(str_buffer, "%dms/f - %dFPS - %dmc/f\n", ms_per_frame, fps, mcpf);
-                OutputDebugStringA(str_buffer);
+                //OutputDebugStringA(str_buffer);
 
                 last_counter = end_counter;
                 last_cycle_count = end_cycle_count;
+
+                game_input *temp = new_input; 
+                new_input = old_input; 
+                old_input = temp;
             }
         }
         else

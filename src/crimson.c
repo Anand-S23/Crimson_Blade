@@ -13,9 +13,9 @@ typedef struct entity
 
 global entity Player; 
 
-internal void UpdateApp(Platform *platform)
+internal void UpdateApp(offscreen_buffer *buffer, game_input *input)
 {
-    ClearBuffer(platform);
+    ClearBuffer(buffer);
 
     if (!Player.intialized)
     {
@@ -25,6 +25,13 @@ internal void UpdateApp(Platform *platform)
         Player.height = 30; 
         Player.grounded = 0; 
         Player.intialized = 1;
+    }
+
+    game_controller_input *input_0 = &input->controllers[0];
+    if (input_0->right.ended_down)
+    {
+        Player.y = 100;
+        Player.x++;
     }
 
     if (!Player.grounded)
@@ -38,8 +45,8 @@ internal void UpdateApp(Platform *platform)
         Player.grounded = 1;
     }
 
-    DrawFilledRect(platform, Player.x, Player.y, Player.width, Player.height, C_Color(0, 255, 255));
-    DrawFilledRect(platform, 0, 600, 1280, 120, C_Color(100, 100, 100)); 
+    DrawFilledRect(buffer, Player.x, Player.y, Player.width, Player.height, C_Color(0, 255, 255));
+    DrawFilledRect(buffer, 0, 600, 1280, 120, C_Color(100, 100, 100)); 
 
 
 }

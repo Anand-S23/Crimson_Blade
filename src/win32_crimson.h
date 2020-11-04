@@ -16,7 +16,6 @@ typedef int32_t  b32;
 typedef int64_t  b64;
 typedef float    f32;
 typedef double   f64;
-
 typedef struct win32_offscreen_buffer
 {
     BITMAPINFO info;
