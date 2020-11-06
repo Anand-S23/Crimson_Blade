@@ -1,3 +1,6 @@
+#ifndef WIN32_CRIMSON_H
+#define WIN32_CRIMSON_H
+
 #define internal static 
 #define local_persist static
 #define global static 
@@ -31,3 +34,5 @@ typedef struct window_dimension
     int width; 
     int height;
 } window_dimension;
+
+#endif

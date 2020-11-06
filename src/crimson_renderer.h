@@ -1,3 +1,6 @@
+#ifndef CRIMSON_RENDERER_H
+#define CRIMSON_RENDERER_H
+
 typedef struct color
 {
     u8 r; 
@@ -11,3 +14,13 @@ internal crimson_color CreateColor(int r, int g, int b)
     return color; 
 }
 #define C_Color(r, g, b) CreateColor(r, g, b)
+
+typedef struct Texture
+{
+    unsigned char *data; 
+    int width; 
+    int height; 
+    int channels;
+} Texture; 
+
+#endif

@@ -1,5 +1,4 @@
-typedef struct app
-{
-    b32 initalized; 
-    f32 delta_t; 
-} app;
+#ifndef CRIMSON_H
+#define CRIMSON_H
+
+#endif

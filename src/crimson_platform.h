@@ -1,3 +1,6 @@
+#ifndef CRIMSON_PLATFORM_H
+#define CRIMSON_PLATFORM_H
+
 #define ArrayCount(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 typedef struct offscreen_buffer
@@ -49,3 +52,5 @@ typedef struct game_input
 {
     game_controller_input controllers[4];
 } game_input;
+
+#endif
