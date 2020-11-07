@@ -1,55 +1,46 @@
+#include "crimson.h"
 #include "crimson_renderer.c"
 
-typedef struct entity
+internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_input *input)
 {
-    int x; 
-    int y;
-    int width; 
-    int height; 
+    Assert(sizeof(game_state) <= memory->storage_size);
 
-    int grounded;
-    b32 intialized; 
-} entity; 
-
-global entity Player; 
-
-
-internal void UpdateApp(offscreen_buffer *buffer, game_input *input)
-{
-    ClearBuffer(buffer);
-
-
-    if (!Player.intialized)
+    game_state *state = (game_state *)memory->storage;
+    if (!memory->initialized)
     {
-        Player.x = 10; 
-        Player.y = 10, 
-        Player.width = 20; 
-        Player.height = 30; 
-        Player.grounded = 0; 
-        Player.intialized = 1;
+        state->player.x = 10;
+        state->player.y = 10;
+        state->player.width = 20;
+        state->player.height = 30;
+        state->player.grounded = 0;
+
+        memory->initialized = 1;
     }
 
     game_controller_input *input_0 = &input->controllers[0];
     if (input_0->right.ended_down)
     {
-        Player.y = 100;
-        Player.x++;
+        state->player.y = 100;
+        state->player.x++;
     }
 
-    if (!Player.grounded)
+    if (!state->player.grounded)
     {
-        Player.y += 1; 
+        state->player.y += 1; 
     }
 
-    if (Player.y + Player.height <= 600)
+    if (state->player.y + state->player.height <= 600)
     {
-        Player.y = 600 - Player.height; 
-        Player.grounded = 1;
+        state->player.y = 600 - state->player.height; 
+        state->player.grounded = 1;
     }
+
+    ClearBuffer(buffer);
 
     Texture img = LoadTexture("assests/platformer-tilemap.png");
     BlitTextureToBuffer(buffer, img, 0, 0);
 
-    DrawFilledRect(buffer, Player.x, Player.y, Player.width, Player.height, C_Color(0, 255, 255));
+    DrawFilledRect(buffer, state->player.x, state->player.y, 
+                   state->player.width, state->player.height, C_Color(0, 255, 255));
     DrawFilledRect(buffer, 0, 600, 1280, 120, C_Color(100, 100, 100)); 
 }

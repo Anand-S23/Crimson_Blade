@@ -287,6 +287,16 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
         if (window)
         {
+#if CRIMSON_INTERNAL 
+            LPVOID base_address = 0;
+#else 
+            LPVOID base_address = 0;
+#endif
+            game_memory game_memory = {0};
+            game_memory.storage_size = Megabytes(64); 
+            game_memory.storage = VirtualAlloc(0, game_memory.storage_size,
+                                               MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+
             game_input input[2];
             game_input *new_input = &input[0];
             game_input *old_input = &input[1];
@@ -372,7 +382,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                     buffer.bytes_per_pixel = Global_Backbuffer.bytes_per_pixel;
                 }
 
-                UpdateApp(&buffer, new_input);
+                UpdateApp(&game_memory, &buffer, new_input);
 
                 HDC device_context = GetDC(window);
                 window_dimension dimension = GetWindowDimension(window);

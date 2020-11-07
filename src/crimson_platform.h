@@ -1,8 +1,20 @@
 #ifndef CRIMSON_PLATFORM_H
 #define CRIMSON_PLATFORM_H
 
+#if CRIMSON_SLOW
+#define Assert(expr) if(!(expr)) {*(int *)0 = 0;}
+#else 
+#define Assert(expr)
+#endif
+
+#define Bytes(n)     (n)
+#define Kilobytes(n) (Bytes(n)*1024)
+#define Megabytes(n) (Kilobytes(n)*1024)
+#define Gigabytes(n) (Megabytes(n)*1024)
+
 #define ArrayCount(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+// game buffer
 typedef struct offscreen_buffer
 {
     void *memory;
@@ -12,6 +24,7 @@ typedef struct offscreen_buffer
     int bytes_per_pixel;
 } offscreen_buffer;
 
+// input 
 typedef struct game_button_state
 {
     int half_transititions;
@@ -52,5 +65,13 @@ typedef struct game_input
 {
     game_controller_input controllers[4];
 } game_input;
+
+// game memory
+typedef struct game_memory
+{
+    b32 initialized;
+    u64 storage_size; 
+    void *storage;
+} game_memory;
 
 #endif
