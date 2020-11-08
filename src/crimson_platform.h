@@ -7,13 +7,6 @@
 #define Assert(expr)
 #endif
 
-#define Bytes(n)     (n)
-#define Kilobytes(n) (Bytes(n)*1024)
-#define Megabytes(n) (Kilobytes(n)*1024)
-#define Gigabytes(n) (Megabytes(n)*1024)
-
-#define ArrayCount(arr) (sizeof(arr) / sizeof((arr)[0]))
-
 // game buffer
 typedef struct offscreen_buffer
 {

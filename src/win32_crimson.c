@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "win32_crimson.h"
+#include "crimson_math.h"
 #include "crimson_platform.h"
 #include "crimson.c"
 
@@ -320,9 +321,9 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                 }
 
                 int max_controller_count = XUSER_MAX_COUNT;
-                if (max_controller_count > ArrayCount(new_input->controllers))
+                if (max_controller_count > ArraySize(new_input->controllers))
                 {
-                    max_controller_count = ArrayCount(new_input->controllers);
+                    max_controller_count = ArraySize(new_input->controllers);
                 }
 
                 for (DWORD controller_index = 0; controller_index < max_controller_count; ++controller_index)

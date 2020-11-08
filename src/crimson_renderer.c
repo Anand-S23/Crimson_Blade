@@ -25,22 +25,21 @@ internal void ClearBuffer(offscreen_buffer *buffer)
     }
 }
 
-internal void DrawFilledRect(offscreen_buffer *buffer, 
-                             int x, int y, int w, int h, 
-                             crimson_color color)
+internal void DrawFilledRect(offscreen_buffer *buffer,
+                             v2 position, v2 dimension, v3 color)
 {
-    i32 min_x = (x < 0) ? 0 : (i32)x;
-    i32 min_y = (y < 0) ? 0 : (i32)y;
-    i32 max_x = (buffer->width < min_x + w) ? buffer->width : min_x + (i32)w;
-    i32 max_y = (buffer->height < min_y + h) ? buffer->height : min_y + (i32)h;
+    i32 min_x = Max(0, (i32)position.x);
+    i32 min_y = Max(0, (i32)position.y);
+    i32 max_x = Min((buffer->width), (min_x + (i32)dimension.width));
+    i32 max_y = Min((buffer->height), (min_y + (i32)dimension.height));
     
-    u8 *row = (u8 *)buffer->memory + x*buffer->bytes_per_pixel + y*buffer->pitch; 
+    u8 *row = (u8 *)buffer->memory + (i32)position.x*buffer->bytes_per_pixel + (i32)position.y*buffer->pitch; 
     for(i32 j = min_y; j < max_y; ++j)
     {
         u32 *pixel = (u32 *)row;
         for(i32 i = min_x; i < max_x; ++i)
         {
-            *pixel++ = ((color.r << 16) | (color.g << 8) | color.b);
+            *pixel++ = (((u8)color.r << 16) | ((u8)color.g << 8) | (u8)color.b);
         }
 
         row += buffer->pitch; 
@@ -61,14 +60,14 @@ internal Texture LoadTexture(char *filename)
 }
 
 internal void BlitTextureToBuffer(offscreen_buffer *buffer, 
-                                  Texture image, int x, int y)
+                                  Texture image, v2 position)
 {
-    i32 min_x = (x < 0) ? 0 : (i32)x;
-    i32 min_y = (y < 0) ? 0 : (i32)y;
-    i32 max_x = (buffer->width < min_x + image.width) ? buffer->width : min_x + (i32)image.width;
-    i32 max_y = (buffer->height < min_y + image.height) ? buffer->height : min_y + (i32)image.height;
+    i32 min_x = Max(0, (i32)position.x);
+    i32 min_y = Max(0, (i32)position.y);
+    i32 max_x = Min((buffer->width), (min_x + (i32)image.width));
+    i32 max_y = Min((buffer->height), (min_y + (i32)image.height));
 
-    u8 *row = (u8 *)buffer->memory + x*buffer->bytes_per_pixel + y*buffer->pitch; 
+    u8 *row = (u8 *)buffer->memory + (i32)position.x*buffer->bytes_per_pixel + (i32)position.y*buffer->pitch; 
     for(i32 j = min_y; j < max_y; ++j)
     {
         u32 *pixel = (u32 *)row;

@@ -8,10 +8,8 @@ internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_inpu
     game_state *state = (game_state *)memory->storage;
     if (!memory->initialized)
     {
-        state->player.x = 10;
-        state->player.y = 10;
-        state->player.width = 20;
-        state->player.height = 30;
+        state->player.position = v2(10, 10);
+        state->player.dimension = v2(20, 30);
         state->player.grounded = 0;
 
         memory->initialized = 1;
@@ -20,27 +18,26 @@ internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_inpu
     game_controller_input *input_0 = &input->controllers[0];
     if (input_0->right.ended_down)
     {
-        state->player.y = 100;
-        state->player.x++;
+        state->player.position.y = 100;
+        state->player.position.x++;
     }
 
     if (!state->player.grounded)
     {
-        state->player.y += 1; 
+        state->player.position.y += 1; 
     }
 
-    if (state->player.y + state->player.height <= 600)
+    if (state->player.position.y + state->player.dimension.height <= 600)
     {
-        state->player.y = 600 - state->player.height; 
+        state->player.position.y = 600 - state->player.dimension.height; 
         state->player.grounded = 1;
     }
 
     ClearBuffer(buffer);
 
     Texture img = LoadTexture("assests/platformer-tilemap.png");
-    BlitTextureToBuffer(buffer, img, 0, 0);
+    BlitTextureToBuffer(buffer, img, v2(0, 0));
 
-    DrawFilledRect(buffer, state->player.x, state->player.y, 
-                   state->player.width, state->player.height, C_Color(0, 255, 255));
-    DrawFilledRect(buffer, 0, 600, 1280, 120, C_Color(100, 100, 100)); 
+    DrawFilledRect(buffer, state->player.position, state->player.dimension, v3(0, 255, 255));
+    DrawFilledRect(buffer, v2(0, 600), v2(1280, 120), v3(100, 100, 100)); 
 }
