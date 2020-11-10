@@ -35,8 +35,8 @@ internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_inpu
 
     ClearBuffer(buffer);
 
-    Texture img = LoadTexture("assests/platformer-tilemap.png");
-    BlitTextureToBuffer(buffer, img, v2(0, 0));
+    //Texture img = LoadTexture("assests/platformer-tilemap.png");
+    //BlitTextureToBuffer(buffer, img, v2(0, 0));
 
     DrawFilledRect(buffer, state->player.position, state->player.dimension, v3(0, 255, 255));
     DrawFilledRect(buffer, v2(0, 600), v2(1280, 120), v3(100, 100, 100)); 

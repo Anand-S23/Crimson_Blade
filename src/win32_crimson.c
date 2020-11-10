@@ -342,28 +342,6 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                         b32 right = (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
                         b32 left_shoulder = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
                         b32 Right_shoulder = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
-                        int16_t stick_x = pad->sThumbLX;
-                        int16_t stick_y = pad->sThumbLY;
-
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->up, &new_controller->up, 
-                                                        XINPUT_GAMEPAD_Y);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->down, &new_controller->down, 
-                                                        XINPUT_GAMEPAD_A);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->right, &new_controller->right, 
-                                                        XINPUT_GAMEPAD_B);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->left, &new_controller->left, 
-                                                        XINPUT_GAMEPAD_X);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->left_shoulder, &new_controller->left_shoulder, 
-                                                        XINPUT_GAMEPAD_LEFT_SHOULDER);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->right_shoulder, &new_controller->right_shoulder, 
-                                                        XINPUT_GAMEPAD_RIGHT_SHOULDER);
-
                         b32 start = (pad->wButtons & XINPUT_GAMEPAD_START);
                         b32 back = (pad->wButtons & XINPUT_GAMEPAD_BACK);
                         b32 a_button = (pad->wButtons & XINPUT_GAMEPAD_A);
@@ -371,6 +349,39 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                         b32 x_button = (pad->wButtons & XINPUT_GAMEPAD_X);
                         b32 y_button = (pad->wButtons & XINPUT_GAMEPAD_Y);
 
+                        int16_t stick_x = pad->sThumbLX;
+                        int16_t stick_y = pad->sThumbLY;
+
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->y_button, &new_controller->y_button, 
+                                                        XINPUT_GAMEPAD_Y);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->a_button, &new_controller->a_button, 
+                                                        XINPUT_GAMEPAD_A);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->b_button, &new_controller->b_button, 
+                                                        XINPUT_GAMEPAD_B);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->x_button, &new_controller->x_button, 
+                                                        XINPUT_GAMEPAD_X);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->left_shoulder, &new_controller->left_shoulder, 
+                                                        XINPUT_GAMEPAD_LEFT_SHOULDER);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->right_shoulder, &new_controller->right_shoulder, 
+                                                        XINPUT_GAMEPAD_RIGHT_SHOULDER);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->up, &new_controller->up, 
+                                                        XINPUT_GAMEPAD_DPAD_UP);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->down, &new_controller->down, 
+                                                        XINPUT_GAMEPAD_DPAD_DOWN);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->right, &new_controller->right, 
+                                                        XINPUT_GAMEPAD_DPAD_RIGHT);
+                        Win32ProcessXInputDigitalButton(pad->wButtons, 
+                                                        &old_controller->left, &new_controller->left, 
+                                                        XINPUT_GAMEPAD_DPAD_LEFT);
                     }
                 }
 

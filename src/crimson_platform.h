@@ -18,6 +18,12 @@ typedef struct offscreen_buffer
 } offscreen_buffer;
 
 // input 
+enum {
+#define Key(name, str) KEY_##name,
+#include "platform_key_list.h"
+    KEY_MAX
+};
+
 typedef struct game_button_state
 {
     int half_transititions;
@@ -40,7 +46,7 @@ typedef struct game_controller_input
 
     union 
     {
-        game_button_state buttons[6];
+        game_button_state buttons[12];
 
         struct 
         {
@@ -50,6 +56,12 @@ typedef struct game_controller_input
             game_button_state right; 
             game_button_state left_shoulder; 
             game_button_state right_shoulder; 
+            game_button_state a_button;
+            game_button_state x_button;
+            game_button_state y_button;
+            game_button_state b_button;
+            game_button_state start; 
+            game_button_state back;
         };
     };
 } game_controller_input;
