@@ -1,6 +1,8 @@
 #ifndef CRIMSON_H
 #define CRIMSON_H
 
+#include "crimson_platform.h"
+
 typedef struct entity
 {
     v2 position;

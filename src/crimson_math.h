@@ -5,6 +5,7 @@
 #define Kilobytes(n) (Bytes(n)*1024LL)
 #define Megabytes(n) (Kilobytes(n)*1024LL)
 #define Gigabytes(n) (Megabytes(n)*1024LL)
+#define Terabytes(n) (Gigabytes(n)*1024LL)
 
 #define PIf 3.1415926535897f
 #define ONE_OVER_SQUARE_ROOT_OF_TWO_PI 0.3989422804
