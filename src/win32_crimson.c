@@ -197,14 +197,147 @@ internal void Win32LoadXInput()
     }
 }
 
-internal void Win32ProcessXInputDigitalButton(DWORD xinput_button_state, 
-                                              game_button_state *old_state, 
+internal void Win32ProcessXInputDigitalButton(game_button_state *old_state, 
                                               game_button_state *new_state, 
+                                              DWORD xinput_button_state,
                                               DWORD button_bit)
 {
     new_state->half_transititions = (old_state->ended_down != new_state->ended_down) ? 1 : 0;
     new_state->ended_down = (xinput_button_state & button_bit);
 }
+
+internal void Win32ProcessKeyboardButton(game_button_state *new_state, b32 is_down)
+{
+    if (new_state->ended_down != is_down) 
+    {
+        Assert(new_state->ended_down != is_down);
+        new_state->ended_down = is_down;
+        ++new_state->half_transititions;
+    }
+}
+
+internal f32 Win32ProcessInputStickValue(SHORT value, SHORT deadzone)
+{
+    f32 result = 0; 
+
+    if (value < -deadzone)
+    {
+        result = (f32)value / 32768.0f;
+    }
+    else if (value > deadzone)
+    {
+        result = (f32)value / 32768.0f;
+    }
+
+    return result;
+}
+
+internal void Win32ProcessInput(game_controller_input *keyboard_input)
+{
+    MSG message; 
+    while (PeekMessageA(&message, 0, 0, 0, PM_REMOVE))
+    {
+        switch (message.message)
+        {
+            case WM_SYSKEYDOWN:
+            case WM_SYSKEYUP:
+            case WM_KEYDOWN:
+            case WM_KEYUP:
+            {
+                u32 vk_code = (u32)message.wParam;
+                b32 was_down = ((message.lParam & (1 << 30)) != 0);
+                b32 is_down = ((message.lParam & (1 << 31)) == 0);
+
+                u32 key_index = 0;
+
+                if (is_down != was_down)
+                {
+                    /* NOTE: This is for full keyboard support
+                    if(vk_code >= 'A' && vk_code <= 'Z')
+                    {
+                        key_index = KEY_a + (vk_code - 'A');
+                        Win32ProcessKeyboardButton(&input->keyboard[key_index], is_down);
+                    }
+                    else if (vk_code >= '0' && vk_code <= '9')
+                    {
+                        key_index = KEY_0 + (vk_code - '0');
+                        Win32ProcessKeyboardButton(&input->keyboard[key_index], is_down);
+                    }
+                    */
+                    switch (vk_code)
+                    {
+                        case 'W': 
+                        {
+                        } break;
+
+                        case 'A': 
+                        {
+                        } break;
+
+                        case 'S': 
+                        {
+                        } break;
+
+                        case 'D': 
+                        {
+                        } break;
+
+                        case 'Q': 
+                        {
+                            Win32ProcessKeyboardButton(&keyboard_input->left_shoulder, is_down);
+                        } break;
+
+                        case 'E': 
+                        {
+                            Win32ProcessKeyboardButton(&keyboard_input->right_shoulder, is_down);
+                        } break;
+                        
+                        case VK_UP: 
+                        {
+                            Win32ProcessKeyboardButton(&keyboard_input->up, is_down);
+                        } break;
+
+                        case VK_DOWN: 
+                        {
+                            Win32ProcessKeyboardButton(&keyboard_input->down, is_down);
+                        } break;
+
+                        case VK_LEFT: 
+                        {
+                            Win32ProcessKeyboardButton(&keyboard_input->left, is_down);
+                        } break;
+                        
+                        case VK_RIGHT: 
+                        {
+                            Win32ProcessKeyboardButton(&keyboard_input->right, is_down);
+                        } break;
+
+                        case VK_SPACE: 
+                        {
+                        } break;
+                        
+                        case VK_ESCAPE: 
+                        {
+                        } break;
+                    }
+                }
+
+                b32 alt_key_was_down = ((message.lParam & (1 << 29)) != 0);
+                if ((vk_code == VK_F4) && alt_key_was_down)
+                {
+                    Running = 0; 
+                }
+            } break; 
+
+            default: 
+            {
+                TranslateMessage(&message);
+                DispatchMessageA(&message); 
+            } break;
+        }
+    }
+}
+
 
 internal window_dimension GetWindowDimension(HWND window)
 {
@@ -275,55 +408,7 @@ LRESULT CALLBACK Win32WindowProc(HWND window, UINT message,
         case WM_KEYDOWN:
         case WM_KEYUP:
         {
-            uint32_t vk_code = w_param;
-            b32 was_down = (l_param & (1 << 30) != 0);
-            b32 is_down = (l_param & (1 << 31) == 0);
-
-            if (is_down != was_down)
-            {
-                if (vk_code == 'W')
-                {
-                }
-                else if (vk_code == 'A')
-                {
-                }
-                else if (vk_code == 'S')
-                {
-                }
-                else if (vk_code == 'D')
-                {
-                }
-                else if (vk_code == 'Q')
-                {
-                }
-                else if (vk_code == 'E')
-                {
-                }
-                else if (vk_code == VK_UP)
-                {
-                }
-                else if (vk_code == VK_DOWN)
-                {
-                }
-                else if (vk_code == VK_LEFT)
-                {
-                }
-                else if (vk_code == VK_RIGHT)
-                {
-                }
-                else if (vk_code == VK_SPACE)
-                {
-                }
-                else if (vk_code == VK_ESCAPE)
-                {
-                }
-            }
-
-            b32 alt_key_was_down = ((l_param & (1 << 29)) != 0);
-            if ((vk_code == VK_F4) && alt_key_was_down)
-            {
-                Running = 0; 
-            }
+            Assert("Keyboard input detected here");
         } break; 
 
         case WM_PAINT: 
@@ -395,19 +480,19 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
             while (Running)
             {
-                MSG Message; 
-                while (PeekMessageA(&Message, 0, 0, 0, PM_REMOVE))
-                {
-                    if (Message.message == WM_QUIT)
-                    {
-                        Running = 0;
-                    }
+                game_controller_input *old_keyboard_controller = &old_input->controllers[0];
+                game_controller_input *new_keyboard_controller = &new_input->controllers[0];
+                game_controller_input zero_controller = {0};
 
-                    TranslateMessage(&Message);
-                    DispatchMessageA(&Message); 
+                *new_keyboard_controller = zero_controller;
+
+                for (int i = 0; i < ArraySize(new_keyboard_controller->buttons); ++i)
+                {
+                    new_keyboard_controller->buttons[i].ended_down = 
+                        old_keyboard_controller->buttons[i].ended_down;
                 }
 
-                int max_controller_count = XUSER_MAX_COUNT;
+                DWORD max_controller_count = XUSER_MAX_COUNT + 1;
                 if (max_controller_count > ArraySize(new_input->controllers))
                 {
                     max_controller_count = ArraySize(new_input->controllers);
@@ -415,13 +500,15 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
                 for (DWORD controller_index = 0; controller_index < max_controller_count; ++controller_index)
                 {
-                    game_controller_input *old_controller = &old_input->controllers[controller_index];
-                    game_controller_input *new_controller = &new_input->controllers[controller_index];
+                    game_controller_input *old_controller = &old_input->controllers[controller_index + 1];
+                    game_controller_input *new_controller = &new_input->controllers[controller_index + 1];
 
                     XINPUT_STATE controller_state; 
-                    if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS)
+                    if (XInputGetState(controller_index + 1, &controller_state) == ERROR_SUCCESS)
                     {
                         XINPUT_GAMEPAD *pad = &controller_state.Gamepad; 
+
+                        new_controller->is_analog = 1;
 
                         b32 up = (pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
                         b32 down = (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
@@ -436,41 +523,106 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                         b32 x_button = (pad->wButtons & XINPUT_GAMEPAD_X);
                         b32 y_button = (pad->wButtons & XINPUT_GAMEPAD_Y);
 
-                        int16_t stick_x = pad->sThumbLX;
-                        int16_t stick_y = pad->sThumbLY;
+                        /*
+                        f32 x = Win32ProcessInputStickValue(pad->sThumbLX, 
+                                                            XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+                        new_controller->min_x = new_controller->max_x = new_controller->end_x = x;
 
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->y_button, &new_controller->y_button, 
+                        f32 y = Win32ProcessInputStickValue(pad->sThumbLY, 
+                                                            XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+                        new_controller->min_y = new_controller->max_y = new_controller->end_y = y;
+                                                        */
+
+                        new_controller->stick_average_x = Win32ProcessInputStickValue(
+                            pad->sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+                        new_controller->stick_average_y = Win32ProcessInputStickValue(
+                            pad->sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+
+/*
+                        if (new_controller->stick_average_x != 0.0f ||
+                            new_controller->stick_average_x != 0.0f) 
+                        {
+                            new_controller->is_analog = 1;
+                        }
+
+                        if (pad->wButtons & XINPUT_GAMEPAD_DPAD_UP) 
+                        {
+                            new_controller->stick_average_y = 1.0f;
+                            new_controller->is_analog = 0;
+                        }
+                        if (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN) 
+                        {
+                            new_controller->stick_average_y = -1.0f;
+                            new_controller->is_analog = 0;
+                        }
+                        if (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) 
+                        {
+                            new_controller->stick_average_y = 1.0f;
+                            new_controller->is_analog = 0;
+                        }
+                        if (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT) 
+                        {
+                            new_controller->stick_average_y = -1.0f;
+                            new_controller->is_analog = 0;
+                        }
+                        */
+
+                        f32 threshold = 0.5f;
+                        Win32ProcessXInputDigitalButton(&old_controller->up,
+                                                        &new_controller->up,
+                                                        (new_controller->stick_average_y > threshold ? 1 : 0),
+                                                        1);
+                        Win32ProcessXInputDigitalButton(&old_controller->down,
+                                                        &new_controller->down,
+                                                        (new_controller->stick_average_y < -threshold ? 1 : 0),
+                                                        1);
+                        Win32ProcessXInputDigitalButton(&old_controller->right,
+                                                        &new_controller->right,
+                                                        (new_controller->stick_average_x > threshold ? 1 : 0),
+                                                        1);
+                        Win32ProcessXInputDigitalButton(&old_controller->left,
+                                                        &new_controller->left,
+                                                        (new_controller->stick_average_x < -threshold ? 1 : 0),
+                                                        1);
+
+                        Win32ProcessXInputDigitalButton(&old_controller->y_button,
+                                                        &new_controller->y_button,
+                                                        pad->wButtons,
                                                         XINPUT_GAMEPAD_Y);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->a_button, &new_controller->a_button, 
-                                                        XINPUT_GAMEPAD_A);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->b_button, &new_controller->b_button, 
-                                                        XINPUT_GAMEPAD_B);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->x_button, &new_controller->x_button, 
+                        Win32ProcessXInputDigitalButton(&old_controller->x_button,
+                                                        &new_controller->x_button,
+                                                        pad->wButtons,
                                                         XINPUT_GAMEPAD_X);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->left_shoulder, &new_controller->left_shoulder, 
+                        Win32ProcessXInputDigitalButton(&old_controller->b_button,
+                                                        &new_controller->b_button,
+                                                        pad->wButtons,
+                                                        XINPUT_GAMEPAD_B);
+                        Win32ProcessXInputDigitalButton(&old_controller->a_button,
+                                                        &new_controller->a_button,
+                                                        pad->wButtons,
+                                                        XINPUT_GAMEPAD_A);
+
+                        Win32ProcessXInputDigitalButton(&old_controller->left_shoulder,
+                                                        &new_controller->left_shoulder,
+                                                        pad->wButtons,
                                                         XINPUT_GAMEPAD_LEFT_SHOULDER);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->right_shoulder, &new_controller->right_shoulder, 
+                        Win32ProcessXInputDigitalButton(&old_controller->right_shoulder,
+                                                        &new_controller->right_shoulder,
+                                                        pad->wButtons,
                                                         XINPUT_GAMEPAD_RIGHT_SHOULDER);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->up, &new_controller->up, 
-                                                        XINPUT_GAMEPAD_DPAD_UP);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->down, &new_controller->down, 
-                                                        XINPUT_GAMEPAD_DPAD_DOWN);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->right, &new_controller->right, 
-                                                        XINPUT_GAMEPAD_DPAD_RIGHT);
-                        Win32ProcessXInputDigitalButton(pad->wButtons, 
-                                                        &old_controller->left, &new_controller->left, 
-                                                        XINPUT_GAMEPAD_DPAD_LEFT);
+
+                        Win32ProcessXInputDigitalButton(&old_controller->start,
+                                                        &new_controller->start,
+                                                        pad->wButtons,
+                                                        XINPUT_GAMEPAD_START);
+                        Win32ProcessXInputDigitalButton(&old_controller->back,
+                                                        &new_controller->back,
+                                                        pad->wButtons,
+                                                        XINPUT_GAMEPAD_BACK);
                     }
                 }
+
+                Win32ProcessInput(new_keyboard_controller);
 
                 offscreen_buffer buffer = {0};
                 {
@@ -497,8 +649,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
                 u64 cycle_elpased = end_cycle_count - last_cycle_count;
                 i64 counter_elapsed = end_counter.QuadPart - last_counter.QuadPart; 
-                i32 ms_per_frame = (1000 * counter_elapsed) / perf_count_frequency;
-                i32 fps = perf_count_frequency / counter_elapsed;
+                i32 ms_per_frame = (i32)((1000 * counter_elapsed) / perf_count_frequency);
+                i32 fps = (i32)(perf_count_frequency / counter_elapsed);
                 i32 mcpf = (i32)(cycle_elpased / (1000 * 1000));
 
                 char str_buffer[256];

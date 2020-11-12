@@ -17,6 +17,7 @@ internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_inpu
             DEBUGPlatformFreeFileMemory(file.memory);
         }
 
+        state->player = {0};
         state->player.position = v2(10, 10);
         state->player.dimension = v2(20, 30);
         state->player.grounded = 0;
@@ -24,22 +25,25 @@ internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_inpu
         memory->initialized = 1;
     }
 
-    game_controller_input *input_0 = &input->controllers[0];
-    if (input_0->right.ended_down)
+    for (int controller_index = 0; controller_index < ArraySize(input->controllers); ++controller_index)
     {
-        state->player.position.y = 100;
-        state->player.position.x++;
-    }
-
-    if (!state->player.grounded)
-    {
-        state->player.position.y += 1; 
-    }
-
-    if (state->player.position.y + state->player.dimension.height <= 600)
-    {
-        state->player.position.y = 600 - state->player.dimension.height; 
-        state->player.grounded = 1;
+        game_controller_input *controller = &input->controllers[controller_index];
+        if (controller->is_analog)
+        {
+            state->player.position.x += controller->stick_average_x;
+            state->player.position.y += controller->stick_average_y;
+        }
+        else
+        {
+            if (controller->right.ended_down)
+            {
+                state->player.position.x += 1;
+            }
+            if (controller->left.ended_down)
+            {
+                state->player.position.x -= 1;
+            }
+        }
     }
 
     ClearBuffer(buffer);

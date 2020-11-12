@@ -39,16 +39,8 @@ typedef struct game_button_state
 typedef struct game_controller_input
 {
     b32 is_analog;
-
-    f32 start_x; 
-    f32 start_y;
-    f32 end_x;
-    f32 end_y;
-
-    f32 min_x; 
-    f32 min_y; 
-    f32 max_x; 
-    f32 max_y;
+    f32 stick_average_x; 
+    f32 stick_average_y;
 
     union 
     {
@@ -56,25 +48,33 @@ typedef struct game_controller_input
 
         struct 
         {
-            game_button_state up; 
-            game_button_state down; 
-            game_button_state left; 
-            game_button_state right; 
+            // controller
+            game_button_state up;
+            game_button_state down;
+            game_button_state left;
+            game_button_state right;
+
             game_button_state left_shoulder; 
-            game_button_state right_shoulder; 
+            game_button_state right_shoulder;
+
             game_button_state a_button;
             game_button_state x_button;
             game_button_state y_button;
             game_button_state b_button;
-            game_button_state start; 
+
+            game_button_state start;
             game_button_state back;
+
+            // keyboard 
+            //game_button_state keyboard[KEY_MAX];
         };
     };
 } game_controller_input;
 
 typedef struct game_input
 {
-    game_controller_input controllers[4];
+    // 0 is keyboard, rest are controllers
+    game_controller_input controllers[5]; 
 } game_input;
 
 // game memory
