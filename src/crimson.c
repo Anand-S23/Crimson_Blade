@@ -17,7 +17,6 @@ internal void UpdateApp(game_memory *memory, offscreen_buffer *buffer, game_inpu
             DEBUGPlatformFreeFileMemory(file.memory);
         }
 
-        state->player = {0};
         state->player.position = v2(10, 10);
         state->player.dimension = v2(20, 30);
         state->player.grounded = 0;

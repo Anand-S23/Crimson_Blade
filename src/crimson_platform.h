@@ -39,6 +39,7 @@ typedef struct game_button_state
 typedef struct game_controller_input
 {
     b32 is_analog;
+    b32 is_connected;
     f32 stick_average_x; 
     f32 stick_average_y;
 
@@ -73,9 +74,14 @@ typedef struct game_controller_input
 
 typedef struct game_input
 {
-    // 0 is keyboard, rest are controllers
     game_controller_input controllers[5]; 
 } game_input;
+
+inline game_controller_input *GetController(game_input *input, int unsigned controller_index) 
+{ 
+    Assert(controller_index < ArraySize(input->controllers)); 
+    return &input->controllers[controller_index]; 
+}
 
 // game memory
 typedef struct game_memory

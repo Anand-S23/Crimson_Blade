@@ -480,8 +480,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
 
             while (Running)
             {
-                game_controller_input *old_keyboard_controller = &old_input->controllers[0];
-                game_controller_input *new_keyboard_controller = &new_input->controllers[0];
+                game_controller_input *old_keyboard_controller = GetController(old_input, 0);
+                game_controller_input *new_keyboard_controller = GetController(new_input, 0);
                 game_controller_input zero_controller = {0};
 
                 *new_keyboard_controller = zero_controller;
@@ -493,52 +493,29 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                 }
 
                 DWORD max_controller_count = XUSER_MAX_COUNT + 1;
-                if (max_controller_count > ArraySize(new_input->controllers))
+                if (max_controller_count > (ArraySize(new_input->controllers) - 1))
                 {
-                    max_controller_count = ArraySize(new_input->controllers);
+                    max_controller_count = ArraySize(new_input->controllers) - 1;
                 }
 
                 for (DWORD controller_index = 0; controller_index < max_controller_count; ++controller_index)
                 {
-                    game_controller_input *old_controller = &old_input->controllers[controller_index + 1];
-                    game_controller_input *new_controller = &new_input->controllers[controller_index + 1];
+                    game_controller_input *old_controller = GetController(old_input, controller_index + 1);
+                    game_controller_input *new_controller = GetController(new_input, controller_index + 1);
 
                     XINPUT_STATE controller_state; 
-                    if (XInputGetState(controller_index + 1, &controller_state) == ERROR_SUCCESS)
+                    if (XInputGetState(controller_index, &controller_state) == ERROR_SUCCESS)
                     {
+                        new_controller->is_connected = 1;
+                        new_controller->is_analog = old_controller->is_analog;
+
                         XINPUT_GAMEPAD *pad = &controller_state.Gamepad; 
-
-                        new_controller->is_analog = 1;
-
-                        b32 up = (pad->wButtons & XINPUT_GAMEPAD_DPAD_UP);
-                        b32 down = (pad->wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
-                        b32 left = (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
-                        b32 right = (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
-                        b32 left_shoulder = (pad->wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
-                        b32 Right_shoulder = (pad->wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
-                        b32 start = (pad->wButtons & XINPUT_GAMEPAD_START);
-                        b32 back = (pad->wButtons & XINPUT_GAMEPAD_BACK);
-                        b32 a_button = (pad->wButtons & XINPUT_GAMEPAD_A);
-                        b32 b_button = (pad->wButtons & XINPUT_GAMEPAD_B);
-                        b32 x_button = (pad->wButtons & XINPUT_GAMEPAD_X);
-                        b32 y_button = (pad->wButtons & XINPUT_GAMEPAD_Y);
-
-                        /*
-                        f32 x = Win32ProcessInputStickValue(pad->sThumbLX, 
-                                                            XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
-                        new_controller->min_x = new_controller->max_x = new_controller->end_x = x;
-
-                        f32 y = Win32ProcessInputStickValue(pad->sThumbLY, 
-                                                            XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
-                        new_controller->min_y = new_controller->max_y = new_controller->end_y = y;
-                                                        */
 
                         new_controller->stick_average_x = Win32ProcessInputStickValue(
                             pad->sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
                         new_controller->stick_average_y = Win32ProcessInputStickValue(
                             pad->sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
 
-/*
                         if (new_controller->stick_average_x != 0.0f ||
                             new_controller->stick_average_x != 0.0f) 
                         {
@@ -555,17 +532,16 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                             new_controller->stick_average_y = -1.0f;
                             new_controller->is_analog = 0;
                         }
-                        if (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) 
-                        {
-                            new_controller->stick_average_y = 1.0f;
-                            new_controller->is_analog = 0;
-                        }
                         if (pad->wButtons & XINPUT_GAMEPAD_DPAD_LEFT) 
                         {
                             new_controller->stick_average_y = -1.0f;
                             new_controller->is_analog = 0;
                         }
-                        */
+                        if (pad->wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) 
+                        {
+                            new_controller->stick_average_y = 1.0f;
+                            new_controller->is_analog = 0;
+                        }
 
                         f32 threshold = 0.5f;
                         Win32ProcessXInputDigitalButton(&old_controller->up,
@@ -619,6 +595,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                                                         &new_controller->back,
                                                         pad->wButtons,
                                                         XINPUT_GAMEPAD_BACK);
+                    }
+                    else 
+                    {
+                        new_controller->is_connected = 0;
                     }
                 }
 
