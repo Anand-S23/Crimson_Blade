@@ -31,6 +31,8 @@ typedef DIRECT_SOUND_CREATE(direct_sound_create);
 
 global b32 Running = 1; 
 global win32_offscreen_buffer Global_Backbuffer; 
+global i64 perf_count_frequency;
+
 
 internal debug_read_file_result DEBUGPlatformReadEntireFile(char *filename)
 {
@@ -432,12 +434,28 @@ LRESULT CALLBACK Win32WindowProc(HWND window, UINT message,
     return result; 
 }
 
+inline LARGE_INTEGER Win32GetWallClock()
+{
+    LARGE_INTEGER result; 
+    QueryPerformanceCounter(&result);
+    return result;
+}
+
+inline f32 Win32GetSecondsElapsed(LARGE_INTEGER start, LARGE_INTEGER end)
+{
+    f32 result = (f32)(end.QuadPart - start.QuadPart) / (f32)perf_count_frequency;
+    return result;
+}
+
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance, 
                    LPSTR cmd_line, int cmd_show)
 {
-    LARGE_INTEGER perf_count_frequency_result; 
+    LARGE_INTEGER perf_count_frequency_result;
     QueryPerformanceFrequency(&perf_count_frequency_result);
-    i64 perf_count_frequency = perf_count_frequency_result.QuadPart;
+    perf_count_frequency = perf_count_frequency_result.QuadPart;
+
+    UINT desired_scheduler_ms = 1; 
+    b32 sleep_is_granular = (timeBeginPeriod(desired_scheduler_ms) == TIMERR_NOERROR);
     
     Win32LoadXInput();
     Win32ResizeDIBSection(&Global_Backbuffer, 1280, 720);
@@ -447,6 +465,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
     window_class.lpfnWndProc = Win32WindowProc;
     window_class.hInstance = instance;
     window_class.lpszClassName = "CrimsonBladeWindowClass";
+
+    int moniter_refresh_hz = 60; 
+    int game_update_hz = moniter_refresh_hz / 2;
+    f32 target_fps = 1.0f / (f32)game_update_hz;
 
     if (RegisterClassA(&window_class))
     {
@@ -474,7 +496,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
             game_input *new_input = &input[0];
             game_input *old_input = &input[1];
 
-            LARGE_INTEGER last_counter; 
+            LARGE_INTEGER last_counter = Win32GetWallClock(); 
             QueryPerformanceCounter(&last_counter);
             u64 last_cycle_count = __rdtsc();
 
@@ -622,27 +644,50 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
                                            &Global_Backbuffer);
                 ReleaseDC(window, device_context);
 
-                u64 end_cycle_count = __rdtsc();
+                LARGE_INTEGER work_counter = Win32GetWallClock();
+                f32 work_seconds_elapsed = Win32GetSecondsElapsed(work_counter, last_counter);
 
-                LARGE_INTEGER end_counter;
-                QueryPerformanceCounter(&end_counter);
+                f32 seconds_elapsed_for_frame = work_seconds_elapsed; 
+                if (seconds_elapsed_for_frame < target_fps)
+                {
+                    while (seconds_elapsed_for_frame < target_fps)
+                    {
+                        if (sleep_is_granular)
+                        {
+                            DWORD sleep_ms = (DWORD)(1000.0f * (target_fps - seconds_elapsed_for_frame));
+                            Sleep(sleep_ms);
+                        }
+                        seconds_elapsed_for_frame = Win32GetSecondsElapsed(last_counter, 
+                                                                        Win32GetWallClock());
+                    }
+                }
+                else
+                {
+                    // NOTE: Miss frame
+                    // TODO: Logging
+                }
 
-                u64 cycle_elpased = end_cycle_count - last_cycle_count;
-                i64 counter_elapsed = end_counter.QuadPart - last_counter.QuadPart; 
+#if 0
                 i32 ms_per_frame = (i32)((1000 * counter_elapsed) / perf_count_frequency);
                 i32 fps = (i32)(perf_count_frequency / counter_elapsed);
+                f32 seconds_elapsed_for_work = (f32)counter_elapsed / (f32)perf_count_frequency;
                 i32 mcpf = (i32)(cycle_elpased / (1000 * 1000));
 
                 char str_buffer[256];
                 wsprintf(str_buffer, "%dms/f - %dFPS - %dmc/f\n", ms_per_frame, fps, mcpf);
-                //OutputDebugStringA(str_buffer);
-
-                last_counter = end_counter;
-                last_cycle_count = end_cycle_count;
+                OutputDebugStringA(str_buffer);
+#endif 
 
                 game_input *temp = new_input; 
                 new_input = old_input; 
                 old_input = temp;
+
+                LARGE_INTEGER end_counter = Win32GetWallClock();
+                last_counter = end_counter;
+
+                u64 end_cycle_count = __rdtsc();
+                u64 cycle_elpased = end_cycle_count - last_cycle_count;
+                last_cycle_count = end_cycle_count;
             }
         }
         else
