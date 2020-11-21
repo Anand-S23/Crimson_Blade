@@ -118,7 +118,6 @@ internal b32 DEBUGPlatformWriteFile(char *filename, u32 memory_size, void *memor
     return result;
 }
 
-/*
 internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t buffer_size) 
 {
     HMODULE dsound_library = LoadLibraryA("dsound.dll");
@@ -159,10 +158,20 @@ internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t b
                 {
                     // TODO: logging
                 }
-
-                buffer_desc.dwBufferBytes = buffer_size;
-
             } 
+            else 
+            {
+                // TODO: logging
+            }
+
+            DSBUFFERDESC buffer_descriptor = {0};
+            buffer_descriptor.dwSize = sizeof(BufferDescriptor);
+            buffer_descriptor.dwFlags = DSBCAPS_GETCURRENTPOSITION2;
+            buffer_descriptor.dwBufferBytes = BufferSize;
+            buffer_descriptor.lpwfxFormat = &WaveFormat;
+            if (SUCCESSED(DSound->CreateSoundBuffer(&BufferDescriptor, &GlobalSecondaryBuffer, 0))
+            {
+            }
             else 
             {
                 // TODO: logging
@@ -178,7 +187,68 @@ internal void Win32InitDSound(HWND window, int32_t samples_per_second, int32_t b
         // TODO: Logging 
     }
 }
-       */
+
+internal void Win32ClearSoundBuffer(win32_sound_output &output)
+{
+    VOID *region1;
+    DWORD region1_size;
+    VOID *region2;
+    DWORD region2_size;
+
+    if (SUCCEEDED(GlobalSecondaryBuffer->Lock(0, output.secondary_buffer_size,
+                                              &region1, &region1_size,
+                                              &region2, &region2_size, 0)))
+    {
+        u8 *dest_sample = (u8 *)region1;
+        for (DWORD byte_index = 0; byte_index < region1_size; ++byte_index)
+        {
+            *dest_sample++ = 0;
+        }
+
+        dest_sample = (u8 *)region2;
+        for (DWORD byte_index = 0; byte_index < region2_size; ++byte_index)
+        {
+            *dest_sample++ = 0;
+        }
+        GlobalSecondaryBuffer->Unlock(region1, region1_size, region2, region2_size);
+    }
+}
+
+internal void Win32FillSoundBuffer(win32_sound_output &output, DWORD byte_to_lock,
+                                   DWORD bytes_to_write, const game_sound_output_buffer &source_buffer)
+{
+    VOID *region1;
+    DWORD region1_size;
+    VOID *region;
+    DWORD region2_size;
+
+    if (SUCCEEDED(GlobalSecondaryBuffer->Lock(bytes_to_lock, bytes_to_write,
+                                              &region1, &region1_size,
+                                              &region, &region2_size,
+                                              0)))
+    {
+        DWORD region1_sample_count = region1_size / output.bytes_per_sample;
+        i16 *dest_sample = (i16 *)region1;
+        i16 *source_sample = source_buffer.samples;
+
+        for (DWORD sample_index = 0; sample_index < region1_sample_count; ++sample_index)
+        {
+            *dest_sample++ = *source_sample++;
+            *dest_sample++ = *source_sample++;
+            ++output.running_sample_index;
+        }
+
+        dest_sample = (i16 *)region;
+        DWORD regionSampleCount = region2_size / Output.BytesPerSample;
+        for (DWORD SampleIndex = 0; SampleIndex < regionSampleCount; ++SampleIndex)
+        {
+            *dest_sample++ = *source_sample++;
+            *dest_sample++ = *source_sample++;
+            ++output.running_sample_index;
+        }
+        GlobalSecondaryBuffer->Unlock(region1, region1_size, region, region2_size);
+    }
+}
 
 internal void Win32LoadXInput()
 {
@@ -499,6 +569,19 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prev_instance,
             LARGE_INTEGER last_counter = Win32GetWallClock(); 
             QueryPerformanceCounter(&last_counter);
             u64 last_cycle_count = __rdtsc();
+
+            win32_sound_output sound_output = {};
+
+            sound_output.samples_per_second = 48000;
+            sound_output.bytes_per_sample = sizeof(i16) * 2;
+            sound_output.secondary_buffer_size = sound_output.samples_per_second * sound_output.bytes_per_sample;
+
+            sound_output.saftey_bytes = (int)((f32)sound_output.samples_per_second *
+                                              (f32)sound_output.bytes_per_sample / game_update_hz);
+            Win32InitDSound(window, sound_output.samples_per_second, sound_output.secondary_buffer_size);
+            Win32ClearSoundBuffer(sound_output);
+            GlobalSecondaryBuffer->Play(0, 0, DSBPLAY_LOOPING);
+
 
             while (Running)
             {

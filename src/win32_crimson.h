@@ -35,4 +35,13 @@ typedef struct window_dimension
     int height;
 } window_dimension;
 
+struct win32_sound_output
+{
+    int samples_per_second;
+    u32 running_sample_index;
+    int bytes_per_sample;
+    DWORD secondary_buffer_size;
+    DWORD saftey_bytes;
+} win32_sound_output;
+
 #endif

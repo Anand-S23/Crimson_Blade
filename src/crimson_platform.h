@@ -93,6 +93,14 @@ typedef struct game_memory
     void *transient_storage;
 } game_memory;
 
+typedef struct game_sound_output_buffer
+{
+    int samples_per_second;
+    int sample_count;
+    i16 *samples;
+} game_sound_output_buffer;
+
+
 #ifdef CRIMSON_INTERNAL
 typedef struct debug_read_file_result
 {
